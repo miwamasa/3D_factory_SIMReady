@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Motor Factory Lab — SCADA Console</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/factory3d/view.css"></head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/"><span class="brand-icon">M<span>▰</span></span><span>MOTOR<br><small>SCADA CONSOLE</small></span></a>
+  <div class="side-label">OPERATOR STATION / 01</div>
+  <nav aria-label="メインナビゲーション">
+    <button data-tab="overview" class="nav active"><span>▦</span> ライン監視</button>
+    <button data-tab="factory3d" class="nav" aria-label="工場 3D"><span>◇</span> 工場 3D</button>
+    <button data-tab="agent" class="nav"><span>⌘</span> エージェント実験</button>
+    <button data-tab="approvals" class="nav"><span>✓</span> 人の承認 <b id="approval-count">0</b></button>
+    <button data-tab="interface" class="nav"><span>⇄</span> I/F・設計</button>
+  </nav>
+  <div class="side-bottom"><div class="side-label">ISA-95 BOUNDARY</div><div class="level">L4 <span>ERP / 生産計画</span><i>公開</i></div><div class="level">L3 <span>MES / 製造運用</span><i>公開</i></div><div class="level muted">L2 <span>PLC / 制御</span><i>内部</i></div><div class="level muted">L1 <span>デバイス / 計測</span><i>内部</i></div><p>SIMULATION ONLY<br><small>実設備には接続していません</small></p><span class="version">v0.1 · LOCAL TEST BENCH</span></div>
+</aside>
+<main>
+  <header><div class="breadcrumb">PLANT 01 <span>/</span> MOTOR ASSEMBLY <span>/</span> <strong id="page-name">ライン監視</strong></div><div class="header-right"><span class="system-mode">SIMULATION</span><span id="connection" class="connection">接続中</span><button id="identity-button" class="button small">人のキーで接続</button></div></header>
+  <div class="content">
+    <section class="page" id="page-overview">
+      <div class="page-heading"><div><div class="eyebrow">SUPERVISORY CONTROL & MONITORING</div><h1>モーター組立ライン <span class="heading-tag">LINE-01</span></h1><p>工程ミミック・設備状態・品質・製造指図</p></div><div class="line-badge"><span id="line-dot" class="dot"></span><strong id="line-status">稼働中</strong><span class="divider"></span><span>AUTO SEQUENCE</span></div></div>
+      <div class="simbar"><div><span class="subtle">SIM TIME</span><strong id="sim-time">00:00:00</strong><span class="chip" id="seed-label">SEED 42</span></div><div class="sim-buttons"><button id="clock-button" class="button small" disabled>時計を停止</button><select id="speed-select" aria-label="シミュレーション速度" disabled><option value="1">1×</option><option value="5" selected>5×</option><option value="20">20×</option><option value="60">60×</option></select><button id="step-button" class="button small" disabled>+60秒</button><button id="reset-button" class="icon-button" title="同じseedでリセット" disabled>↺</button></div></div>
+      <div class="annunciator" id="annunciator" role="status"><span class="annunciator-code" id="annunciator-code">SYSTEM</span><strong id="annunciator-message">設備データを受信しています</strong><span id="annunciator-count">—</span></div>
+      <div class="kpi-grid">
+        <article class="kpi"><div>良品生産数 <span>OUTPUT</span></div><strong id="good-kpi">0</strong><small>台 <span id="throughput">0 / h</span></small><div class="mini-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></article>
+        <article class="kpi"><div>直行率 <span>QUALITY</span></div><strong id="quality-kpi">—</strong><small>不良 <b id="reject-kpi">0</b> 台 <span>固定検査基準</span></small><div class="kpi-track"><i id="quality-track"></i></div></article>
+        <article class="kpi"><div>工程内在庫 <span>WIP</span></div><strong id="wip-kpi">0</strong><small>台 <span>最大 18 台</span></small><div class="kpi-track blue"><i id="wip-track"></i></div></article>
+        <article class="kpi"><div>OEE 推定値 <span>ESTIMATE</span></div><strong id="oee-kpi">—</strong><small id="oee-detail">A × P × Q · 起動過渡を含む</small><div class="kpi-track"><i id="oee-track"></i></div></article>
+      </div>
+      <article class="panel line-panel"><div class="panel-head"><div><span class="section-number">01</span><h2>工程ミミック</h2><span class="tag">PROCESS OVERVIEW</span></div><span class="subtle">設備を選択すると詳細を表示</span></div><div class="line-flow" id="line-flow"></div><div class="process-status"><span><i class="dot" id="interlock-dot"></i><b>INTERLOCK</b><strong id="interlock-status">—</strong></span><span><b>PRODUCT</b>M-100</span><span><b>MATERIAL FLOW</b>左 → 右</span><span><b>AGENT ACCESS</b>L3 MES / L4 ERP</span></div><div class="flow-legend"><span><i class="dot green"></i> 加工中</span><span><i class="dot amber"></i> 搬送待ち</span><span><i class="dot red"></i> 故障</span><span><i class="dot gray"></i> 待機 / 停止</span><span class="legend-end">下位工程を模擬 · AIからの直接書込みなし</span></div></article>
+      <div class="two-columns"><article class="panel"><div class="panel-head"><div><span class="section-number">02</span><h2>生産トレンド</h2></div><span class="subtle">累積台数 / シミュレーション時間</span></div><div id="production-chart" class="chart"></div><div class="chart-legend"><span><i class="line-key green"></i>良品</span><span><i class="line-key red"></i>不良</span><span id="energy-label"></span></div></article><article class="panel"><div class="panel-head"><div><span class="section-number">03</span><h2>アラームサマリ</h2></div><span id="alarm-badge" class="tag">NORMAL</span></div><div id="alarms" class="alarms"></div><div class="inventory-row"><div><span class="subtle">MOTOR-KIT</span><strong id="inventory">160 <small>セット</small></strong></div><div><span class="subtle">締付レシピ</span><strong id="torque-label">4.2 <small>N·m</small></strong></div></div></article></div>
+      <article class="panel orders-panel"><div class="panel-head"><div><span class="section-number">04</span><h2>製造指図</h2><span class="tag">LEVEL 4 · ERP</span></div><span class="subtle">数量は投入数基準 · NGは自動再投入しません</span></div><div class="table-wrap"><table><thead><tr><th>製造指図</th><th>品種</th><th>優先度</th><th>計画 / 投入</th><th>良品 / 不良</th><th>進捗</th><th>状態</th></tr></thead><tbody id="orders"></tbody></table></div></article>
+      <div class="fixture"><div><strong>実験シナリオ</strong><span>現場責任者のキーで障害や欠品を注入</span></div><select id="scenario-select" aria-label="実験シナリオ" disabled><option value="normal">通常運転</option><option value="torque_drift">工具ドリフト +0.9 N·m</option><option value="bearing_heat">軸受過熱 / 自動停止</option><option value="material_shortage">部材欠品</option></select><button id="scenario-button" class="button" disabled>シナリオを適用</button></div>
+    </section>
+    <section class="page hidden factory3d" id="page-factory3d">
+      <div class="page-heading"><div><div class="eyebrow">FACTORY VIEW / M-100</div><h1>モーター工場 <span class="heading-tag">LINE-01</span></h1><p>設備を選んで、仕掛品と加工進捗を確認できます。</p></div><span class="factory3d-connection" id="factory3d-status" role="status">接続待ち</span></div>
+      <div class="factory3d-kpis">
+        <article><span>生産速度 / LINE RATE</span><strong id="factory3d-rate">—</strong><small id="factory3d-rate-detail">直近5仮想分の検査完了数</small></article>
+        <article><span>仕掛品 / WIP</span><strong id="factory3d-wip">—</strong><small>全6工程 · 加工中と待機中の合計</small></article>
+        <article><span>平均リードタイム</span><strong id="factory3d-lead">—</strong><small id="factory3d-lead-detail">投入 → EOL検査完了</small></article>
+        <article><span>仮想時間 / SIM TIME</span><strong id="factory3d-time">00:00:00</strong><small id="factory3d-clock-status">時計の状態を取得中</small></article>
+      </div>
+      <div class="factory3d-layout">
+        <article class="panel factory3d-scene">
+          <div class="panel-head factory3d-view-head">
+            <div><span class="section-number">01</span><h2>組立ライン</h2><span class="tag">BLENDER / GLB</span></div>
+            <div class="factory3d-camera">
+              <button class="button small" id="factory3d-overview" type="button">斜め</button>
+              <button class="button small" id="factory3d-top" type="button">上面</button>
+              <button class="button small" id="factory3d-close" type="button" disabled>接写</button>
+              <button class="button small" id="factory3d-demo" type="button" aria-pressed="false" disabled>工程デモ</button>
+            </div>
+          </div>
+          <div class="factory3d-stage" id="factory3d-stage">
+            <div class="factory3d-loading" id="factory3d-loading" role="status">3Dモデルを読み込んでいます</div>
+            <div class="factory3d-labels" id="factory3d-labels"></div>
+            <div class="factory3d-demo-note" id="factory3d-demo-note" role="status" hidden>工程デモ中 · 表示のみ</div>
+          </div>
+          <p class="factory3d-process" id="factory3d-process"></p>
+          <div class="factory3d-stations" id="factory3d-stations" aria-label="工程を選択"></div>
+          <div class="factory3d-caption"><span>ドラッグで回転 · スクロールで拡大 · 右ドラッグで移動</span><span>搬送・部品箱 <a href="https://huggingface.co/datasets/nvidia/simready-assets" target="_blank" rel="noopener noreferrer">NVIDIA SimReady Assets</a>（<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>、形状簡略化・再着色）</span></div>
+        </article>
+        <div class="factory3d-sidebar">
+          <article class="panel"><div class="panel-head"><h2>時間ジャンプ</h2><span class="tag">SIM CLOCK</span></div><div class="factory3d-controls">
+            <label for="factory3d-seconds">進める仮想時間</label>
+            <select id="factory3d-seconds"><option value="30">30秒</option><option value="60" selected>1分</option><option value="300">5分</option><option value="900">15分</option><option value="3600">60分</option></select>
+            <button class="button primary" id="factory3d-jump" type="button" disabled>時間を進める →</button>
+            <button class="button" id="factory3d-clock" type="button" disabled>時計を停止</button>
+            <p class="factory3d-control-note" id="factory3d-jump-note" role="status">現場責任者のキーで時間を操作できます。</p>
+          </div></article>
+          <article class="panel"><div class="panel-head"><h2>選択した工程</h2><span class="tag" id="factory3d-station-id">S01</span></div><div class="factory3d-detail" id="factory3d-detail">データを取得中</div></article>
+        </div>
+      </div>
+    </section>
+    <section class="page hidden" id="page-agent">
+      <div class="page-heading"><div><div class="eyebrow">AGENT PLAYGROUND</div><h1>エージェント実験</h1><p>この画面は分離したagent資格情報を使用。承認操作は公開していません。</p></div><span class="tag green-tag">AGENT-01</span></div>
+      <div class="callout"><strong>観測 → 操作案 → 人の承認 → 実行</strong><p>AIモデルは未接続です。「次の一手」は状態を読むルールベースの接続見本。後から同じAPIを呼ぶLLMへ置き換えられます。</p></div>
+      <div class="two-columns agent-columns"><article class="panel"><div class="panel-head"><h2>操作案を作る</h2><span class="tag">PREFLIGHT</span></div><div class="form"><label>操作<select id="action-select"></select></label><label>対象<input id="target-input" value="LINE-01"></label><label>引数 <span class="subtle">JSON</span><textarea id="args-input" rows="4">{}</textarea></label><div class="form-buttons"><button id="preflight-button" class="button primary">操作案を作成</button><button id="suggest-button" class="button">次の一手（ルール）</button></div><p class="form-hint">停止は自動許可。再開・レシピ・保全は現場責任者、ERP変更は生産計画担当者が承認します。</p></div></article><article class="panel"><div class="panel-head"><h2>呼出し結果</h2><button id="deny-test-button" class="button small">自己承認の拒否を試す</button></div><pre id="agent-output" class="console">// エージェントの応答がここに表示されます。
+// 実行にはproposal_idとidempotency_keyを使用。</pre></article></div>
+      <article class="panel"><div class="panel-head"><h2>エージェントの操作案</h2><span class="subtle">有効期限 5分（実時間）· 1案1回</span></div><div id="agent-proposals" class="proposal-list"></div></article>
+      <article class="panel audit-panel"><div class="panel-head"><h2>監査タイムライン</h2><span class="tag">SERVER ENFORCED</span></div><div id="audit-log"></div></article>
+    </section>
+    <section class="page hidden" id="page-approvals">
+      <div class="page-heading"><div><div class="eyebrow">HUMAN AUTHORIZATION</div><h1>人の承認</h1><p>接続した人の資格情報で、エージェントが提案した内容を確認します。</p></div><button class="button connect-human">承認者キーを接続</button></div>
+      <div class="callout"><strong id="human-status">承認者は未接続です</strong><p>現場責任者はMES操作、生産計画担当者はERP操作を承認できます。承認は実行主体・対象・引数・状態バージョンに固定されます。</p></div>
+      <div id="human-proposals" class="proposal-list"></div>
+    </section>
+    <section class="page hidden" id="page-interface">
+      <div class="page-heading"><div><div class="eyebrow">CONNECTION & ARCHITECTURE</div><h1>AIの接続境界を設計する</h1><p>通信はstateless。工場・操作案・承認・実行記録は永続化。</p></div><span class="tag">MCP TOOLS PROFILE</span></div>
+      <div class="architecture"><div class="arch-agent"><b>AI Agent</b><small>観測 / 計画 / ツール呼出し</small></div><span class="arch-arrow">→</span><div class="arch-gate"><b>実行ゲート</b><small>認証 → RBAC → 制約 → 承認 → 再検証</small><span>承認ID / 冪等性 / 監査</span></div><span class="arch-arrow">→</span><div class="arch-factory"><b>L3 MES / L4 ERP</b><small>モーター工場シミュレータ</small></div></div>
+      <div class="two-columns"><article class="panel"><div class="panel-head"><h2>接続先</h2></div><div class="form"><label>HTTP MCP（2026-07-28）<code id="mcp-url"></code></label><label>認証<code>Authorization: Bearer &lt;agent key&gt;</code></label><p class="form-hint">server/discover、tools/list、tools/call、pingを実装。旧クライアントは付属のstdio_bridge.pyを使用。OAuth、MRTR、subscriptionsはこの版の対象外です。</p><label>REST<code>POST /api/tool</code></label><p class="form-hint">人の承認は別経路のPOST /api/approval。エージェントのMCPツールには含みません。</p></div></article><article class="panel"><div class="panel-head"><h2>実行時に検証すること</h2></div><ol class="checks"><li>Bearerキーから主体・ロールを決定</li><li>操作・対象・引数の許可範囲を検証</li><li>操作案と承認者ロール・職務分離を照合</li><li>実時間TTLと設備・指図の変更を再検証</li><li>状態更新と一度だけの実行記録を同時確定</li></ol></article></div>
+      <article class="panel"><div class="panel-head"><h2>公開ツール</h2></div><div id="tool-catalog" class="tool-catalog"></div></article>
+      <div class="callout neutral"><strong>テストベンチの認証について</strong><p>人のキーは起動時に生成される開発用Bearer資格情報です。実際の本人確認やMFAは行いません。本番接続ではIdP / OIDC等で検証した主体へ差し替えます。クライアントの「承認済み」という自己申告は信用しません。OEE・工程時間・保全挙動は学習用の簡易モデルです。</p></div>
+    </section>
+    <footer><span>MOTOR FACTORY LAB</span><span>工場とエージェントの、実験のための接点。</span><span id="last-updated">待機中</span></footer>
+  </div>
+</main>
+<dialog id="identity-dialog"><form id="identity-form"><div class="dialog-head"><div><div class="eyebrow">SEPARATE CREDENTIALS</div><h2>人のキーで接続</h2></div><button type="button" class="icon-button" id="close-dialog" aria-label="閉じる">×</button></div><p>起動時に生成した現場責任者または生産計画担当者のキーを入力してください。</p><label>開発用Bearerキー<input type="password" id="human-key" autocomplete="off" placeholder="supervisor / planner の token" required></label><p class="form-hint">取得: <code>python3 credentials.py supervisor</code><br>ERP承認: <code>python3 credentials.py planner</code><br>エージェント用のキーとは分離してください。</p><div class="form-buttons"><button class="button primary" type="submit">認証して接続</button><button class="button" type="button" id="disconnect-button">人の接続を解除</button></div><p id="identity-error" role="alert"></p></form></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="equipment-dialog" aria-labelledby="equipment-title"><div class="dialog-head"><div><div class="eyebrow">EQUIPMENT FACEPLATE / READ ONLY</div><h2 id="equipment-title">設備詳細</h2></div><button type="button" class="icon-button" id="close-equipment" aria-label="設備詳細を閉じる">×</button></div><div id="equipment-content"></div><p class="form-hint">表示は最新の受信値です。設備への操作は「エージェント実験」の操作案・承認フローを使用します。</p></dialog>
+<script src="/app.js"></script>
+</body></html>
