@@ -29,3 +29,6 @@ Thumbs.db
 # Blender のバックアップ
 *.blend1
 *.blend2
+
+# agents
+agents/
